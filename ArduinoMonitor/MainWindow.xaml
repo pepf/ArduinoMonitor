@@ -1,0 +1,61 @@
+﻿<Window x:Class="ArduinoMonitor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ArduinoMonitor" Height="600" Width="800" Name="mainWindow" AllowsTransparency="False" Foreground="White" UseLayoutRounding="False" VisualClearTypeHint="Enabled" VisualTextRenderingMode="ClearType" WindowStyle="ToolWindow" Background="{x:Null}" WindowStartupLocation="CenterScreen" MinWidth="640" MinHeight="480" Icon="eye.ico">
+    <Grid Name="contentGrid">
+        <Button Content="Connect" Height="40" HorizontalAlignment="Right" Margin="0,12,12,0" Name="connectButton" VerticalAlignment="Top" Width="100" Padding="5" BorderThickness="0" BorderBrush="#00000000" FontStyle="Normal" FontWeight="Normal" FontSize="16" Click="arduinoConnect" Foreground="#FF212121">
+            <Button.Background>
+                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                    <GradientStop Color="#FFF0F0F0" Offset="0" />
+                    <GradientStop Color="#FFDFDFDF" Offset="1" />
+                </LinearGradientBrush>
+            </Button.Background>
+        </Button>
+        <TextBlock Height="Auto" Margin="12,12,0,0" Name="introText" Text="Welcome to this Arduino Monitor utility, this will monitor your Arduino Serial Port and plot the data in the graph below. To start, connect your Arduino and press the connect button." VerticalAlignment="Top" Padding="0" ClipToBounds="False" TextWrapping="Wrap" HorizontalAlignment="Left" Width="405" Foreground="#FF565656" />
+        <Viewbox Name="canvasviewbox" Stretch="Fill" ClipToBounds="True" Margin="10,70,10,110" MouseWheel="scrollViewbox" MouseRightButtonDown="drag" MouseRightButtonUp="dragstop" MouseMove="panPreview">
+            <Canvas  Name="bgplot"  Height="300"  Width="600" HorizontalAlignment="Left" VerticalAlignment="Top" Background="#FF4E4E4E"  MouseMove="specific" Cursor="Cross" MouseLeave="disableDraw" >
+                <Canvas Name="plot" Height="300"  Width="600" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <Canvas Name="labels"/>
+                    <Canvas Name="grid" />
+                </Canvas>
+            </Canvas>
+        </Viewbox>
+        <ComboBox Height="23" HorizontalAlignment="Right" Margin="0,29,118,0" Name="comportList" VerticalAlignment="Top" Width="120" Text="Port" SelectionChanged="changePort" BorderBrush="{x:Null}" />
+        <Label Content="COMport" Height="28" HorizontalAlignment="Right" Margin="0,7,175.007,0" Name="comportLabel" VerticalAlignment="Top" Width="62.993" />
+        <StackPanel Height="88" HorizontalAlignment="Left" Margin="12,0,0,10" Name="signalToggles" VerticalAlignment="Bottom" Width="343">
+        </StackPanel>
+        <Grid Name="Viewcontrols" Margin="0,0,10,10" ShowGridLines="False" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="350" Height="88">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="90" />
+                <ColumnDefinition Width="50" />
+                <ColumnDefinition Width="210*" />
+            </Grid.ColumnDefinitions>
+            <Label Content="X Resolution" Height="28" Name="gridxresLabel" Width="Auto" HorizontalAlignment="Left" VerticalAlignment="Top" />
+            <Label Content="Y Resolution" Height="28" HorizontalAlignment="Left" Margin="0,34,0,0" Name="label1" VerticalAlignment="Top" Width="Auto" />
+            <TextBox Background="White" BorderBrush="{x:Null}" HorizontalContentAlignment="Center" Name="gridXres" Padding="1" Text="50" VerticalContentAlignment="Center" Width="50" Grid.Column="1" TextChanged="GridresChanged" HorizontalAlignment="Left" VerticalAlignment="Top" ToolTip="Resolution of vertical gridlines" />
+            <TextBox Background="White" BorderBrush="{x:Null}" HorizontalContentAlignment="Center" Margin="0,34,0,0" Name="gridYres" Padding="1" Text="50" VerticalContentAlignment="Center" Grid.Column="1" TextChanged="GridresChanged" Width="50" HorizontalAlignment="Left" VerticalAlignment="Top" ToolTip="Resolution of horizontal gridlines" />
+            <Button Content="Reset" Height="28" HorizontalAlignment="Right" Name="resetViewBtn" VerticalAlignment="Top" Width="75" Margin="0" Grid.Column="2" BorderBrush="#00000000" Foreground="#FF212121" Background="{Binding ElementName=connectButton, Path=Background}" Padding="0" Click="resetView" ToolTip="Resets view to starting perspective" />
+            <Button Height="40" HorizontalAlignment="Right" Margin="0,34,0,0" Name="ExportBtn" OpacityMask="{x:Null}" ToolTip="Export data" VerticalAlignment="Top" Width="75" Grid.Column="2" Background="{Binding ElementName=connectButton, Path=Background}" Foreground="#00000000" Click="exportData" BorderBrush="{x:Null}" IsEnabled="False">
+                <Button.Content>   
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image Height="43" HorizontalAlignment="Center" Source="Images/save.png" Stretch="None" VerticalAlignment="Center" Width="75" Name="floppy" />
+                </StackPanel>
+                </Button.Content>
+            </Button>
+        </Grid>
+        <Button Height="23" HorizontalAlignment="Right" Margin="0,30,250,0" Name="refreshPortsBtn" VerticalAlignment="Top" Width="30" BorderBrush="{x:Null}" OpacityMask="{x:Null}" Foreground="{x:Null}" Click="refreshPorts" Background="{x:Null}" ToolTip="Refresh COM port list">
+            <Button.Content>
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="Images/reload.png" Width="16" Height="16" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button.Content>
+        </Button>
+        <Button Height="23" HorizontalAlignment="Right" Margin="0,7,250,0" Name="helpBtn" VerticalAlignment="Top" Width="30" BorderBrush="{x:Null}" OpacityMask="{x:Null}" Foreground="#FF383838" Click="moreHelp" Background="{x:Null}" ToolTip="More Help" FontSize="12" FontWeight="Bold" Content="?" />
+        <Grid.Background>
+            <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                <GradientStop Color="WhiteSmoke" Offset="0.738" />
+                <GradientStop Color="#FFE5E5E5" Offset="1" />
+            </LinearGradientBrush>
+        </Grid.Background>
+    </Grid>
+</Window>
