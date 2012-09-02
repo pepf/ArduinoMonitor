@@ -9,6 +9,7 @@ using System.Windows.Shapes;
 using System.Windows.Media;
 using System.Windows.Controls;
 using System.Windows;
+using System.Threading;
 
 namespace ArduinoMonitor
 {
@@ -79,8 +80,15 @@ namespace ArduinoMonitor
         //Close port on disconnect
         public void closePort()
         {
-            arduinoPort.DiscardInBuffer();
-            arduinoPort.Close();
+            try
+            {
+                arduinoPort.DiscardInBuffer();
+                arduinoPort.Close();
+            }
+            catch (Exception)
+            {
+
+            }
             ReadSerialData = null;
             arduinoPort.DataReceived -= arduinoPort_DataReceived;
         }
@@ -126,54 +134,71 @@ namespace ArduinoMonitor
         {
             dataDispatcher.Invoke(DispatcherPriority.Send, ReadSerialData);
         }
-
         // Process received data.
         // Via delegate ReadSerialData.
         private void DoUpdate()
         {
             // Number of bytes in the receive buffer.
-            int iNBytes = arduinoPort.BytesToRead;
-            int N_BYTES = iNBytes;
-            if (iNBytes == N_BYTES)
+            if (arduinoPort.IsOpen)
             {
-                // Get bytes.
-                string line = arduinoPort.ReadLine();
-                Console.WriteLine(line);
-                MatchCollection matches = Regex.Matches(line, "[0-9]+");
-                if (matches.Count > 0)
+                int iNBytes = arduinoPort.BytesToRead;
+                int N_BYTES = iNBytes;
+                if (iNBytes == N_BYTES)
                 {
-                    while (signals.Count < matches.Count) //Mismatch between input data and data streams, add Signal
+                    // Get bytes.
+                    string line = "";
+                    try
                     {
-                        addSignal(); //Add signal, checkbox, events etc.
+                        line = arduinoPort.ReadLine();
                     }
-                    if (matches.Count == signals.Count)
+                    catch (Exception)
                     {
-                        for (int i = 0; i < signals.Count; i++)
+                        Console.WriteLine("Timeout, closing connection");
+                        Thread t = new Thread(closePort);
+                        t.Start();
+                        window.connectButton.Content = "Connect";
+                        window.connectButton.IsEnabled = true;
+                        window.ExportBtn.IsEnabled = false;
+                        window.isConnected = false;
+                        return;
+                    }
+                    Console.WriteLine(line);
+                    MatchCollection matches = Regex.Matches(line, "[0-9]+");
+                    if (matches.Count > 0)
+                    {
+                        while (signals.Count < matches.Count) //Mismatch between input data and data streams, add Signal
                         {
-                            Signal signal = signals[i];
-                            int inputValue = int.Parse(matches[i].Value);
-                            if (inputValue > view.YMAX) view.YMAX = inputValue;
-                            else if (inputValue < view.YMIN) view.YMIN = inputValue;
-                            updatePlot();
-                            Console.WriteLine("added value " + matches[i] + " to signal " + i);
-                            try
-                            {
-                                if (signal.values.Count() > view.XMAX)
-                                {
-                                    view.XMAX++;
-                                    //view.XMAX = signal.values.Count();
-                                    //view.XMIN = signal.values.Count() - (int)window.plot.Width; //Should always differ the size of the canvas
-                                }
-                            }
-                            catch (Exception exception)
-                            {
-                                Console.WriteLine("Signal error " + exception.GetType().ToString() + ", continuing..");
-                            }
-                            signal.addValue(inputValue);
-
+                            addSignal(); //Add signal, checkbox, events etc.
                         }
+                        if (matches.Count == signals.Count)
+                        {
+                            for (int i = 0; i < signals.Count; i++)
+                            {
+                                Signal signal = signals[i];
+                                int inputValue = int.Parse(matches[i].Value);
+                                if (inputValue > view.YMAX) view.YMAX = inputValue;
+                                else if (inputValue < view.YMIN) view.YMIN = inputValue;
+                                updatePlot();
+                                Console.WriteLine("added value " + matches[i] + " to signal " + i);
+                                try
+                                {
+                                    if (signal.values.Count() > view.XMAX)
+                                    {
+                                        view.XMAX++;
+                                        //view.XMAX = signal.values.Count();
+                                        //view.XMIN = signal.values.Count() - (int)window.plot.Width; //Should always differ the size of the canvas
+                                    }
+                                }
+                                catch (Exception exception)
+                                {
+                                    Console.WriteLine("Signal error " + exception.GetType().ToString() + ", continuing..");
+                                }
+                                signal.addValue(inputValue);
+
+                            }
+                        }
+                        //arduinoPort.DiscardInBuffer();
                     }
-                    //arduinoPort.DiscardInBuffer();
                 }
             }
         }

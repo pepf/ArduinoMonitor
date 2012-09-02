@@ -1,9 +1,11 @@
 ﻿<Window x:Class="ArduinoMonitor.helpDialogBox"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="HelpDialog" Height="300" Width="400" Name="help" WindowStartupLocation="CenterOwner" WindowStyle="None" HorizontalAlignment="Center" VerticalAlignment="Center" ResizeMode="NoResize">
+        Title="HelpDialog" Height="382" Width="429" Name="help" WindowStartupLocation="CenterOwner" WindowStyle="None" HorizontalAlignment="Center" VerticalAlignment="Center" ResizeMode="NoResize">
     <Grid>
         <Button Content="I got it, thanks" Height="23" HorizontalAlignment="Center" Margin="94,0,81,12" Name="closeBtn" VerticalAlignment="Bottom" Width="103" Click="close" Background="White" BorderBrush="{x:Null}" />
-        <TextBlock HorizontalAlignment="Stretch" Margin="12,12,12,41" Name="helpText" VerticalAlignment="Stretch" TextWrapping="Wrap" Text="{Binding}" />
+        <TextBlock HorizontalAlignment="Stretch" Margin="12,12,12,79" Name="helpText" VerticalAlignment="Stretch" TextWrapping="Wrap" Text="{Binding}" />
+        <ComboBox Height="28" HorizontalAlignment="Right" Margin="0,270,195,0" Name="baudRateBox" VerticalAlignment="Top" Width="134" Initialized="initBaudRate" SelectionChanged="changeBaud" />
+        <Label Content="BaudRate" Height="28" HorizontalAlignment="Left" Margin="12,270,0,0" Name="baudLabel" VerticalAlignment="Top" />
     </Grid>
 </Window>

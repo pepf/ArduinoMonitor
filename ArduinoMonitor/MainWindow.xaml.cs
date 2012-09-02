@@ -25,13 +25,14 @@ namespace ArduinoMonitor
     /// </summary>
     public partial class MainWindow : Window
     {
-        private SerialPort arduinoPort;
+        public SerialPort arduinoPort;
         public Regex serialpattern;
         private SignalCollection signals;
         private Point dragPoint;
         private TranslateTransform pan;
         private ScaleTransform scale;
         public ViewParams view;
+        public bool isConnected = false; 
         
         private string[] ports;
 
@@ -46,12 +47,12 @@ namespace ArduinoMonitor
                 comportList.Items.Add(port.ToString());
                 Console.WriteLine(port);
             }
-
             arduinoPort = new SerialPort();
             arduinoPort.Parity = Parity.None;
             arduinoPort.StopBits = StopBits.One;
             arduinoPort.DataBits = 8;
             arduinoPort.BaudRate = 9600;
+            arduinoPort.ReadTimeout = 200;
             if (comportList.Items.Count > 0)
             {
                 arduinoPort.PortName = comportList.Items[0].ToString();
@@ -65,7 +66,7 @@ namespace ArduinoMonitor
             resetTransform();
         }
 
-        private void arduinoConnect(object sender, RoutedEventArgs e)
+        public void arduinoConnect(object sender, RoutedEventArgs e)
         {
             string content = connectButton.Content.ToString();
             if (content.Equals("Disconnect")) //Means disconnect
@@ -74,6 +75,7 @@ namespace ArduinoMonitor
                 connectButton.Content = "Connect";
                 connectButton.IsEnabled = true;
                 ExportBtn.IsEnabled = false;
+                isConnected = false;
                 return;
             }
             
@@ -87,6 +89,7 @@ namespace ArduinoMonitor
                 connectButton.Content = "Disconnect";
                 connectButton.IsEnabled = true;
                 ExportBtn.IsEnabled = true;
+                isConnected = true;
             }
             catch (Exception except)
             {
@@ -94,6 +97,7 @@ namespace ArduinoMonitor
                 connectButton.Content = "Connect";
                 connectButton.IsEnabled = true;
                 comportList.IsEnabled = true;
+                isConnected = false;
             }
         }
 
@@ -304,7 +308,7 @@ namespace ArduinoMonitor
         private void moreHelp(object sender, RoutedEventArgs e)
         {
             // Instantiate the dialog box
-            helpDialogBox dlg = new helpDialogBox();
+            helpDialogBox dlg = new helpDialogBox(mainWindow);
 
             // Configure the dialog box
             dlg.Owner = this;
