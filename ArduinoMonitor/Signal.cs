@@ -48,7 +48,7 @@ namespace ArduinoMonitor
             if (fake) { //Create dummy graph
                 Random random = new Random();
                 //Fill the signal with 200 random data points
-                for (int i = 0; i < 400; i++)
+                for (int i = 0; i < 2000; i++)
                 {
                     int randomNumber = (int) Math.Floor(500 * Math.Sin(i * (Math.PI / 180))) + 500;
                     addValue(randomNumber);
@@ -72,11 +72,20 @@ namespace ArduinoMonitor
             // object's contents. 
             using (StreamGeometryContext geo = geometry.Open())
             {
-                int i = 0;
+                double xmax = view.XMAX; //views xmax
+                double xres = xmax / window.plot.Width;
+
                 geo.BeginFigure(new Point(0, 0), false, false);
-                foreach (int value in values)
+                for (double i = 0; i < xmax; i+=xres)
                 {
-                    geo.LineTo(new Point(i, value), true, false);
+                    int iround = (int) Math.Floor(i);
+                    int value;
+                    if (iround < (values.Count() - 1))
+                    {
+                        value = values[iround];
+                    }
+                    else { break; }
+                    geo.LineTo(new Point(iround, value), true, false);
                     i++;
                 }
             }

@@ -51,7 +51,7 @@ namespace ArduinoMonitor
             dataDispatcher = window.Dispatcher;
             signals = new List<Signal>(0);
             this.view = uiWindow.view; //set initial view params
-            view.XMAX = 2000;
+            //view.XMAX = 2000;
             view.YMIN = 0;
             view.YMAX = 1024;
             view.XMIN = 0;
@@ -64,7 +64,7 @@ namespace ArduinoMonitor
             plotlineV.hideLabel();
             preparePlot();
 
-            //addSignal(true);
+            addSignal(true);
         }
 
         //Method to actually open serial port for communication
@@ -254,9 +254,9 @@ namespace ArduinoMonitor
                 int count = 0;
                 foreach (gridLine line in horizontals)
                 {
-                    int Yvalue = yRes * count;
+                    double Yvalue = yRes* count;
                     //line.changeValue((int)Extra.map(Yvalue, (int)view.MIN, (int) view.MAX, 0, (int)window.plot.Height),Yvalue);
-                    line.changeValue(Yvalue, Yvalue);
+                    line.changeValue((int)Yvalue,yRes*count);
                     line.setThickness(factor);
                     count++;
                 }
@@ -337,6 +337,17 @@ namespace ArduinoMonitor
                 signal.setThickness(thickness);
             }
             updatePlot();
+        }
+        public void updateLabels()
+        {
+            foreach (gridLine line in horizontals)
+            {
+                line.updateLabel();
+            }
+            foreach (gridLine line in verticals)
+            {
+                line.updateLabel();
+            }
         }
     }
 }

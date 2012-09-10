@@ -13,11 +13,14 @@ namespace System.Windows.Shapes
     {
         public TextBlock label;
         public Path line;
-        private int value;
+        public int value;
         private Canvas canvas;
         private ViewParams view;
         public string direction;
         private StreamGeometry geometry;
+        private MainWindow window;
+        private bool hiddenLabel = false;
+        private ScaleTransform scale;
 
         //gridLine constructor
         public gridLine(int value, string dir, MainWindow window)
@@ -32,6 +35,7 @@ namespace System.Windows.Shapes
             this.canvas = window.plot;
             this.view = window.view;
             this.direction = dir;
+            this.window = window;
 
             creategeometry(value);
 
@@ -41,7 +45,7 @@ namespace System.Windows.Shapes
             }
             else
             {
-                TextLabel(value + 1, 5, value.ToString());
+                TextLabel(value + 1, 30, value.ToString());
             }
 
 
@@ -81,27 +85,40 @@ namespace System.Windows.Shapes
             if (direction == LineDirection.Horizontal)
             {
                 creategeometry(val);
-                Canvas.SetTop(label, val); //change y of label along
+                Canvas.SetTop(label, val);
             }
             else
             {
                 creategeometry(val);
                 Canvas.SetLeft(label, val);
             }
+            updateLabel();
             label.Text = realVal.ToString(); //Change text of the label itself
+        }
+
+        //Update label coordinates
+        public void updateLabel()
+        {
+            if (!hiddenLabel)
+            {
+                scale.ScaleY = 1 / window.scale.ScaleY;
+                scale.ScaleX = 1 / window.scale.ScaleX;
+                label.RenderTransform = scale;
+            }
         }
 
         //Set gridline thickness
         public void setThickness(double factor) {
             double thickness = 0.5/factor;
             line.StrokeThickness= thickness;
-            label.FontSize = 16 * thickness;
+            //label.FontSize = 16 * thickness;
         }
 
         //Hide the label
         public void hideLabel()
         {
             canvas.Children.Remove(this.label);
+            hiddenLabel = true;
         }
 
         //Create the label
@@ -113,13 +130,15 @@ namespace System.Windows.Shapes
             textBlock.FontSize = 8;
             textBlock.TextAlignment = TextAlignment.Left;
             textBlock.Foreground = System.Windows.Media.Brushes.WhiteSmoke;
-            textBlock.RenderTransformOrigin = new Point(0.5,0.5);
-            ScaleTransform scale = new ScaleTransform();
-            scale.ScaleY = -1;
+            textBlock.RenderTransformOrigin = new Point(0,0);
+            this.scale = new ScaleTransform();
+            scale.ScaleY = 1 / window.scale.ScaleY;
+            scale.ScaleX = 1 / window.scale.ScaleX;
             textBlock.RenderTransform = scale;
             Canvas.SetLeft(textBlock, x);
-            Canvas.SetTop(textBlock, y);
+            Canvas.SetTop(label, y);  
             canvas.Children.Add(label);
+            updateLabel();
         }
 
         //Remove line

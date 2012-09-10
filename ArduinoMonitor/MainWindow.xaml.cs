@@ -29,17 +29,19 @@ namespace ArduinoMonitor
         public Regex serialpattern;
         private SignalCollection signals;
         private Point dragPoint;
-        private TranslateTransform pan;
-        private ScaleTransform scale;
+        public TranslateTransform pan;
+        public ScaleTransform scale;
         public ViewParams view;
-        public bool isConnected = false; 
+        public bool isConnected = false;
+        private Point xmaxstart;
         
         private string[] ports;
 
         public MainWindow()
         {
-            InitializeComponent();
             view = new ViewParams();
+            InitializeComponent();
+            resetTransform();
             signals = new SignalCollection(this);
             ports = SerialPort.GetPortNames();
             Console.WriteLine("ports:");
@@ -63,9 +65,9 @@ namespace ArduinoMonitor
                 connectButton.IsEnabled = false;
             }
 
-            resetTransform();
         }
 
+        //Connecting arduino
         public void arduinoConnect(object sender, RoutedEventArgs e)
         {
             string content = connectButton.Content.ToString();
@@ -228,22 +230,26 @@ namespace ArduinoMonitor
             Console.WriteLine("stop drag, moved X:" + dx.ToString() + " - Y:" + dy.ToString());
             TranslateTransform oldpan = this.pan;
             TranslateTransform pan = new TranslateTransform();
-            pan.X = oldpan.X +(dx);
-            pan.Y = oldpan.Y +(dy);
+            pan.X = oldpan.X +(dx) *(1/scale.ScaleX);
+            pan.Y = oldpan.Y + (dy) * (1 / scale.ScaleY);
             this.pan = pan; //Write back to class property
             updateTransform(this.pan);
             plot.Cursor = Cursors.Cross;
         }
         
         //Update rendertransform property
-        private void updateTransform(TranslateTransform pan)
+        private void updateTransform(TranslateTransform pan,bool scaleStrokes = true)
         {
             TransformGroup transform = new TransformGroup();
-            transform.Children.Add(scale);
             transform.Children.Add(pan);
+            transform.Children.Add(scale);
             plot.RenderTransform = transform;
-
-            signals.scaleSignalStrokes(scale);
+            //labels.RenderTransform = transform;
+            if (scaleStrokes)
+            {
+                signals.scaleSignalStrokes(scale);
+                signals.updateLabels();
+            }
         }
 
         //Reset view to basic view
@@ -256,10 +262,11 @@ namespace ArduinoMonitor
         private void resetTransform()
         {
             //Add transformgroup to plot
-            double yscale = plot.Height / view.YMAX; 
-            scale = new ScaleTransform(yscale, -yscale, 0, 0);
+            double yscale = plot.Height / view.YMAX;
+            double xscale = plot.Width / view.XMAX;
+            scale = new ScaleTransform(xscale, -yscale, 0,0);
             pan = new TranslateTransform(0, plot.Height);
-            updateTransform(this.pan);
+            updateTransform(this.pan,false);
         }
 
         //Export sensor data to a .csv file
@@ -298,8 +305,8 @@ namespace ArduinoMonitor
                 double dy = newpoint.Y - dragPoint.Y;
                 TranslateTransform oldpan = this.pan;
                 TranslateTransform newpan = new TranslateTransform();
-                newpan.X = oldpan.X + (dx);
-                newpan.Y = oldpan.Y + (dy);
+                newpan.X = oldpan.X + (dx) * (1 / scale.ScaleX);
+                newpan.Y = oldpan.Y + (dy) * (1 / scale.ScaleY);
                 updateTransform(newpan);
             }
         }
@@ -316,5 +323,68 @@ namespace ArduinoMonitor
             // Open the dialog box modally
             dlg.Show();
         }
+
+        //Change xmax
+        private void xmaxChange(object sender, TextChangedEventArgs e)
+        {
+            TextBox control = (TextBox)sender;
+            control.Foreground = Brushes.Black;
+            try
+            {
+                    int value = int.Parse(control.Text);
+                    if (value < 500) { throw new System.FormatException("Can't be lower then 500"); }
+                    control.Text = "500";
+                    view.XMAX = value;
+                    signals.updatePlot();
+
+             }
+            catch (System.FormatException excep)
+            {
+                control.Foreground = Brushes.Red;
+                Console.WriteLine(excep.Message);
+            }
+            catch (NullReferenceException) { }
+            
+            //Adjust view
+            try
+            {
+                double xscale = plot.Width / view.XMAX;
+                scale = new ScaleTransform(xscale, this.scale.ScaleY, 0, 0);
+                updateTransform(this.pan, false);
+            }
+            catch (NullReferenceException) { }
+        }
+
+
+        private void xmaxMove(object sender, MouseEventArgs e)
+        {
+            TextBox control = (TextBox)sender;
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                
+                int value = int.Parse(control.Text);
+                int deltaX = (int)Math.Floor(e.GetPosition(mainWindow).X - xmaxstart.X);
+                control.Text = (value - deltaX).ToString();
+                Console.WriteLine("moved by"+ deltaX.ToString() );
+
+            }
+        }
+
+
+        private void xmaxChange(object sender, MouseEventArgs e)
+        {
+            TextBox control = (TextBox)sender;
+            xmaxstart = e.GetPosition(mainWindow);
+            Console.WriteLine("click");
+            Mouse.Capture(control);
+        }
+
+        private void xmaxfinish(object sender, MouseButtonEventArgs e)
+        {
+            TextBox control = (TextBox)sender;
+            control.ReleaseMouseCapture();
+            Console.WriteLine("release");
+        }
+
     }
 }
