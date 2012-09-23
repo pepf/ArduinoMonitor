@@ -61,6 +61,9 @@ namespace ArduinoMonitor
         public void addValue(int inputValue) //Probably ranges from 0-1024
         {
             values.Add(inputValue);
+            if (values.Count() > view.XMAX) {
+                view.XMAX = values.Count();
+            }
             createGeometry();
         }
 
@@ -73,24 +76,34 @@ namespace ArduinoMonitor
             using (StreamGeometryContext geo = geometry.Open())
             {
                 double xmax = view.XMAX; //views xmax
-                double xres = xmax / window.plot.Width;
-
+                int xres = (int)Math.Floor(xmax / window.plot.Width);
+                   
                 geo.BeginFigure(new Point(0, 0), false, false);
-                for (double i = 0; i < xmax; i+=xres)
+                for (int i = 0; i < xmax; i+=xres)
                 {
-                    int iround = (int) Math.Floor(i);
                     int value;
-                    if (iround < (values.Count() - 1))
+                    if (i < (values.Count() - 1))
                     {
-                        value = values[iround];
+                        value = values[i];
                     }
                     else { break; }
-                    geo.LineTo(new Point(iround, value), true, false);
+                    geo.LineTo(new Point(i, value), true, false);
                     i++;
                 }
             }
             geometry.Freeze(); //Freeze to free resources
             line.Data = geometry;
+        }
+
+        //Clear all data stored in the signal
+        public void clear()
+        {
+            while (values.Count > 0)
+            {
+                values.RemoveAt(0);
+            }
+            view.XMAX = window.plot.Width;
+            createGeometry();
         }
 
         //Return latest signal
@@ -125,8 +138,13 @@ namespace ArduinoMonitor
         public void setThickness(double thickness)
         {
             line.StrokeThickness = thickness;
-            pointer.Height = 5* thickness;
-            pointer.Width = pointer.Height;
+
+            ScaleTransform scaletrans = window.scale;
+            ScaleTransform scale = new ScaleTransform();
+            scale.ScaleX = 1/scaletrans.ScaleX;
+            scale.ScaleY = 1/scaletrans.ScaleY;
+            pointer.RenderTransform = scale;
+
         }
         
         //Set line visibility

@@ -180,19 +180,6 @@ namespace ArduinoMonitor
                                 else if (inputValue < view.YMIN) view.YMIN = inputValue;
                                 updatePlot();
                                 Console.WriteLine("added value " + matches[i] + " to signal " + i);
-                                try
-                                {
-                                    if (signal.values.Count() > view.XMAX)
-                                    {
-                                        view.XMAX++;
-                                        //view.XMAX = signal.values.Count();
-                                        //view.XMIN = signal.values.Count() - (int)window.plot.Width; //Should always differ the size of the canvas
-                                    }
-                                }
-                                catch (Exception exception)
-                                {
-                                    Console.WriteLine("Signal error " + exception.GetType().ToString() + ", continuing..");
-                                }
                                 signal.addValue(inputValue);
 
                             }
