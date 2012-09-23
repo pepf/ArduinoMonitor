@@ -1,6 +1,7 @@
 ﻿This is the Git repository for ArduinoMonitor, a C# WPF utility for graphing serial input.
 ﻿
-﻿![Arduinomonitor screen](screen.png "screenshot")
+
+﻿![Arduinomonitor screen](ArduinoMonitor/screen.png "screenshot")
 
 # Features features...
 
@@ -24,3 +25,7 @@
 * Add 3D functionality, to let the graphs pop off the screen!
 
 * Windows 8 support? WPF is also the basis for Windows 8 apps, so it should be relatively easy to add touch support, pinch to zoom etc in an app kind-of way.
+
+# Download
+
+Want to give it a try? Full download is available on the [downloads](https://github.com/pepf/ArduinoMonitor/downloads) page.
