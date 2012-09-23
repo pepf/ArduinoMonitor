@@ -16,7 +16,7 @@
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WarningLevel>4</WarningLevel>
     <IsWebBootstrapper>false</IsWebBootstrapper>
-    <PublishUrl>C:\Users\s080237\Desktop\arduinomonitor\</PublishUrl>
+    <PublishUrl>C:\Users\s080237\Documents\Visual Studio 2010\Projects\ArduinoMonitor\Builds\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
     <UpdateEnabled>false</UpdateEnabled>
@@ -30,7 +30,7 @@
     <ProductName>Arduino Monitor</ProductName>
     <WebPage>publish.htm</WebPage>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
-    <ApplicationRevision>4</ApplicationRevision>
+    <ApplicationRevision>6</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
@@ -59,7 +59,7 @@
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>eye.ico</ApplicationIcon>
+    <ApplicationIcon>multiresicon.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestCertificateThumbprint>7DD6856D40A7BEE125890005B70CCA780151122C</ManifestCertificateThumbprint>
@@ -182,9 +182,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="eye.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\closedhand.cur">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
@@ -194,7 +191,7 @@
     <Resource Include="Images\save.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="newicon.ico" />
+    <Resource Include="multiresicon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -33,7 +33,6 @@ namespace ArduinoMonitor
         public ScaleTransform scale;
         public ViewParams view;
         public bool isConnected = false;
-        private Point xmaxstart;
         
         private string[] ports;
 
@@ -44,6 +43,8 @@ namespace ArduinoMonitor
             resetTransform();
             signals = new SignalCollection(this);
             ports = SerialPort.GetPortNames();
+            this.MouseLeftButtonDown += new MouseButtonEventHandler(dragWindow);
+            
             Console.WriteLine("ports:");
             foreach(string port in ports){
                 comportList.Items.Add(port.ToString());
@@ -65,6 +66,12 @@ namespace ArduinoMonitor
                 connectButton.IsEnabled = false;
             }
 
+
+        }
+
+        void dragWindow(object sender, MouseButtonEventArgs e)
+        {
+            this.DragMove();
         }
 
         //Connecting arduino
@@ -181,32 +188,30 @@ namespace ArduinoMonitor
         {
             ScaleTransform scale = new ScaleTransform();
             ScaleTransform oldscale = this.scale;
+            
             double delta = (double)e.Delta / 1000;
             Point cursor = e.GetPosition(bgplot);
             Console.WriteLine(cursor.ToString());
+            Matrix m = this.scale.Value;
             //Event that scrolls the viewbox, to zoom in on the graph
+            double zF = 1 + delta;
             if (e.Delta > 0)
             {
                 Console.WriteLine("Zooming the viewbox in with " + e.Delta.ToString());
-
-                scale.ScaleY = oldscale.ScaleY - delta;
-                scale.ScaleX = oldscale.ScaleX + delta;
-                this.scale = scale; //write back to class property
-
+                m.ScaleAtPrepend(zF, zF, cursor.X, cursor.Y);
             }
             else
             {
                 Console.WriteLine("Zooming the viewbox out with " + e.Delta.ToString());
-                scale.ScaleY = oldscale.ScaleY - delta;
-                scale.ScaleX = oldscale.ScaleX + delta;
-                if (scale.ScaleX < 0)
-                {
-                    scale.ScaleX *= -1;
-                    scale.ScaleY *= -1;
-                }
-                this.scale = scale; //write back to class property
+                m.ScaleAtPrepend(zF, zF, cursor.X, cursor.Y);
             }
-                updateTransform(this.pan);
+
+            scale.ScaleX = m.M11;
+            scale.ScaleY = m.M22;
+            this.pan.X += m.OffsetX;
+            this.pan.Y += m.OffsetY;
+            this.scale = scale; //write back to class property
+            updateTransform(this.pan);
         }
 
         //Drag event
@@ -226,7 +231,8 @@ namespace ArduinoMonitor
             Point newpoint = e.GetPosition(viewbox);
             //calculate movement
             double dx = newpoint.X - dragPoint.X;
-            double dy = newpoint.Y - dragPoint.Y;
+            double dy = 0;
+           // double dy = newpoint.Y - dragPoint.Y;
             Console.WriteLine("stop drag, moved X:" + dx.ToString() + " - Y:" + dy.ToString());
             TranslateTransform oldpan = this.pan;
             TranslateTransform pan = new TranslateTransform();
@@ -256,6 +262,7 @@ namespace ArduinoMonitor
         private void resetView(object sender, RoutedEventArgs e)
         {
             resetTransform();
+            horizontalZoomslider.Value = 100;
         }
         
         //Reset graph transform
@@ -302,11 +309,13 @@ namespace ArduinoMonitor
                 Point newpoint = e.GetPosition(viewbox);
                 //calculate movement
                 double dx = newpoint.X - dragPoint.X;
-                double dy = newpoint.Y - dragPoint.Y;
+                //double dy = newpoint.Y - dragPoint.Y;
+                double dy = 0;
                 TranslateTransform oldpan = this.pan;
                 TranslateTransform newpan = new TranslateTransform();
                 newpan.X = oldpan.X + (dx) * (1 / scale.ScaleX);
-                newpan.Y = oldpan.Y + (dy) * (1 / scale.ScaleY);
+                newpan.Y = oldpan.Y + (dy) * (1 / scale.ScaleY);              
+
                 updateTransform(newpan);
             }
         }
@@ -356,35 +365,39 @@ namespace ArduinoMonitor
         }
 
 
-        private void xmaxMove(object sender, MouseEventArgs e)
+        private void closeWindow(object sender, RoutedEventArgs e)
         {
-            TextBox control = (TextBox)sender;
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                
-                int value = int.Parse(control.Text);
-                int deltaX = (int)Math.Floor(e.GetPosition(mainWindow).X - xmaxstart.X);
-                control.Text = (value - deltaX).ToString();
-                Console.WriteLine("moved by"+ deltaX.ToString() );
+            mainWindow.Close();
+        }
 
+        private void minWindow(object sender, RoutedEventArgs e)
+        {
+            mainWindow.WindowState = System.Windows.WindowState.Minimized;
+            Button btn = (Button)sender;
+        }
+
+        //changescale according to zoom slider
+        private void vertZoomslider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            Slider slide = (Slider)sender;
+            double percentage = slide.Value/100;
+            try
+            {
+                double xscale = plot.Width / view.XMAX / percentage;
+                this.scale.ScaleX = xscale;
+            }
+            catch (Exception) { }
+        }
+
+        //Clears the current graphs
+        private void cleargraphBtn_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (Signal signal in signals.signals)
+            {
+                signal.clear();
             }
         }
 
-
-        private void xmaxChange(object sender, MouseEventArgs e)
-        {
-            TextBox control = (TextBox)sender;
-            xmaxstart = e.GetPosition(mainWindow);
-            Console.WriteLine("click");
-            Mouse.Capture(control);
-        }
-
-        private void xmaxfinish(object sender, MouseButtonEventArgs e)
-        {
-            TextBox control = (TextBox)sender;
-            control.ReleaseMouseCapture();
-            Console.WriteLine("release");
-        }
 
     }
 }
