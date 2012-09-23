@@ -1,4 +1,6 @@
 ﻿This is the Git repository for ArduinoMonitor, a C# WPF utility for graphing serial input.
+﻿
+﻿![Arduinomonitor screen](screen.png "screenshot")
 
 # Features features...
 
