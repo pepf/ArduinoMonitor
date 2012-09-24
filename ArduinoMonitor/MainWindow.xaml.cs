@@ -250,6 +250,8 @@ namespace ArduinoMonitor
             transform.Children.Add(pan);
             transform.Children.Add(scale);
             plot.RenderTransform = transform;
+            view.XMIN = -1*pan.X;
+            view.XMAX = view.XMIN + plot.Width/scale.ScaleX;
             //labels.RenderTransform = transform;
             if (scaleStrokes)
             {

@@ -64,7 +64,7 @@ namespace ArduinoMonitor
             plotlineV.hideLabel();
             preparePlot();
 
-            addSignal(true);
+            //addSignal(true);
         }
 
         //Method to actually open serial port for communication

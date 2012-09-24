@@ -4,11 +4,11 @@
         Title="ArduinoMonitor" Height="630" Width="800" Name="mainWindow" AllowsTransparency="False" Foreground="White" UseLayoutRounding="False" VisualClearTypeHint="Enabled" VisualTextRenderingMode="ClearType" WindowStyle="None" Background="{x:Null}" WindowStartupLocation="CenterScreen" MinWidth="640" MinHeight="480" Icon="multiresicon.ico" ResizeMode="NoResize" BorderBrush="DimGray">
     <Grid Name="contentGrid">
         <Border BorderBrush="DimGray" BorderThickness="2" Height="Auto" HorizontalAlignment="Stretch" Margin="0" Name="windowBorder" VerticalAlignment="Stretch" Width="Auto">
-        <Slider Height="23" Name="horizontalZoomslider" Width="Auto" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10,0,10,100" ToolTip="Zoom percentage" Maximum="100" Value="100" SmallChange="1" TickFrequency="2" TickPlacement="BottomRight" IsSelectionRangeEnabled="False" SelectionEnd="100" SelectionStart="50" ValueChanged="vertZoomslider_ValueChanged" />
+        <Slider Height="23" Name="horizontalZoomslider" Width="Auto" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10,0,10,100" ToolTip="Zoom percentage" Maximum="100" Value="100" SmallChange="1" TickFrequency="2" TickPlacement="BottomRight" IsSelectionRangeEnabled="False" SelectionEnd="100" SelectionStart="50" ValueChanged="vertZoomslider_ValueChanged" Minimum="1" />
         </Border>
         <Button Content="X" Height="20" HorizontalAlignment="Right" Margin="0,5,12,0" Name="windowClose" VerticalAlignment="Top" Width="20" FontWeight="Bold" Background="{x:Null}" Click="closeWindow" />
         <Button Content="-" Height="20" HorizontalAlignment="Right" Margin="0,5,40,0" Name="windowMin" VerticalAlignment="Top" Width="20" FontWeight="Bold" Background="{x:Null}" Click="minWindow" />
-        <Grid Height="73" VerticalAlignment="Top" Margin="0,20,0,0" IsHitTestVisible="False">
+        <Grid Height="73" VerticalAlignment="Top" Margin="0,20,0,0" IsHitTestVisible="True">
             <Button Content="Connect" Height="40" HorizontalAlignment="Right" Margin="0,12,12,0" Name="connectButton" VerticalAlignment="Top" Width="100" Padding="5" BorderThickness="0" BorderBrush="#00000000" FontStyle="Normal" FontWeight="Normal" FontSize="16" Click="arduinoConnect" Foreground="#FF212121">
             <Button.Background>
                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
@@ -20,7 +20,7 @@
             <TextBlock Height="Auto" Margin="12,12,0,0" Name="introText" Text="Welcome to this Arduino Monitor utility, this will monitor your Arduino Serial Port and plot the data in the graph below. To start, connect your Arduino and press the connect button." VerticalAlignment="Top" Padding="0" ClipToBounds="False" TextWrapping="Wrap" HorizontalAlignment="Left" Width="405" Foreground="#FF565656" />
             <ComboBox Height="23" HorizontalAlignment="Right" Margin="0,29,118,0" Name="comportList" VerticalAlignment="Top" Width="120" Text="Port" SelectionChanged="changePort" BorderBrush="{x:Null}" />
             <Label Content="COMport" Height="28" HorizontalAlignment="Right" Margin="0,7,175.007,0" Name="comportLabel" VerticalAlignment="Top" Width="62.993" />
-            <Button Height="23" HorizontalAlignment="Right" Margin="0,30,250,0" Name="refreshPortsBtn" VerticalAlignment="Top" Width="30" BorderBrush="{x:Null}" OpacityMask="{x:Null}" Foreground="{x:Null}" Click="refreshPorts" Background="{x:Null}" ToolTip="Refresh COM port list">
+            <Button Height="23" HorizontalAlignment="Right" Margin="0,30,250,0" Name="refreshPortsBtn" VerticalAlignment="Top" Width="30" BorderBrush="{x:Null}" OpacityMask="{x:Null}" Foreground="{x:Null}" Click="refreshPorts" Background="{x:Null}" ToolTip="Refresh COM port list" IsEnabled="True">
             <Button.Content>
                 <StackPanel Orientation="Horizontal">
                     <Image Source="Images/reload.png" Width="16" Height="16" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center" />

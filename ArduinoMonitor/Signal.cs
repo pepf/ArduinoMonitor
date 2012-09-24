@@ -75,9 +75,9 @@ namespace ArduinoMonitor
             // object's contents. 
             using (StreamGeometryContext geo = geometry.Open())
             {
-                double xmax = view.XMAX; //views xmax
-                int xres = (int)Math.Floor(xmax / window.plot.Width);
-                   
+                double xmax = window.plot.Width/window.scale.ScaleX; //views xmax
+                int xres = (int)Math.Ceiling(xmax / window.plot.Width);
+                double xScale = window.scale.ScaleX;
                 geo.BeginFigure(new Point(0, 0), false, false);
                 for (int i = 0; i < xmax; i+=xres)
                 {
