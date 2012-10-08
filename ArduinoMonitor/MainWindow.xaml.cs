@@ -40,8 +40,12 @@ namespace ArduinoMonitor
         {
             view = new ViewParams();
             InitializeComponent();
-            resetTransform();
+            scale = new ScaleTransform(1, 1, 0, 0);
+            pan = new TranslateTransform(0, plot.Height);
             signals = new SignalCollection(this);
+                signals.scaleSignalStrokes(scale);
+                signals.updateLabels();
+            resetTransform();
             ports = SerialPort.GetPortNames();
             this.MouseLeftButtonDown += new MouseButtonEventHandler(dragWindow);
             
@@ -143,7 +147,6 @@ namespace ArduinoMonitor
             Point mousepos = e.GetPosition(plot);
             signals.drawmouse = true;
             signals.mousePosition = mousepos;
-            signals.updatePlot();
             //Console.WriteLine(mousepos.X.ToString() + " - " + mousepos.Y.ToString());
         }
 
@@ -171,7 +174,6 @@ namespace ArduinoMonitor
                     signals.yRes = value;
                 }
 
-                signals.updatePlot();
 
             }
             catch (System.FormatException excep)
@@ -186,6 +188,7 @@ namespace ArduinoMonitor
         //Zoom in and zoom out
         private void scrollViewbox(object sender, MouseWheelEventArgs e)
         {
+            return;
             ScaleTransform scale = new ScaleTransform();
             ScaleTransform oldscale = this.scale;
             
@@ -217,6 +220,7 @@ namespace ArduinoMonitor
         //Drag event
         private void drag(object sender, MouseButtonEventArgs e)
         {
+            return;
             Viewbox viewbox = (Viewbox) sender;
             dragPoint = e.GetPosition(viewbox);
             //Change cursor
@@ -227,6 +231,7 @@ namespace ArduinoMonitor
         //Stop dragging; Calculate the amount of drag etc.
         private void dragstop(object sender, MouseButtonEventArgs e)
         {
+            return;
             Viewbox viewbox = (Viewbox)sender;
             Point newpoint = e.GetPosition(viewbox);
             //calculate movement
@@ -242,16 +247,38 @@ namespace ArduinoMonitor
             updateTransform(this.pan);
             plot.Cursor = Cursors.Cross;
         }
-        
+
+        //Panning options
+        private void panPreview(object sender, MouseEventArgs e)
+        {
+            return;
+            Viewbox viewbox = (Viewbox)sender;
+            if (e.RightButton == MouseButtonState.Pressed)
+            { //Means user is panning the canvas, provide updated view
+                Point newpoint = e.GetPosition(viewbox);
+                //calculate movement
+                double dx = newpoint.X - dragPoint.X;
+                //double dy = newpoint.Y - dragPoint.Y;
+                double dy = 0;
+                TranslateTransform oldpan = this.pan;
+                TranslateTransform newpan = new TranslateTransform();
+                newpan.X = oldpan.X + (dx) * (1 / scale.ScaleX);
+                newpan.Y = oldpan.Y + (dy) * (1 / scale.ScaleY);
+
+                updateTransform(newpan);
+            }
+        }
+
+
         //Update rendertransform property
-        private void updateTransform(TranslateTransform pan,bool scaleStrokes = true)
+        public void updateTransform(TranslateTransform pan,bool scaleStrokes = true)
         {
             TransformGroup transform = new TransformGroup();
             transform.Children.Add(pan);
             transform.Children.Add(scale);
             plot.RenderTransform = transform;
-            view.XMIN = -1*pan.X;
-            view.XMAX = view.XMIN + plot.Width/scale.ScaleX;
+            //view.XMIN = -1*pan.X;
+            //panview.XMAX = view.XMIN + plot.Width/scale.ScaleX;
             //labels.RenderTransform = transform;
             if (scaleStrokes)
             {
@@ -268,14 +295,23 @@ namespace ArduinoMonitor
         }
         
         //Reset graph transform
-        private void resetTransform()
+        public void resetTransform(Boolean useSlider = false)
         {
             //Add transformgroup to plot
             double yscale = plot.Height / view.YMAX;
             double xscale = plot.Width / view.XMAX;
-            scale = new ScaleTransform(xscale, -yscale, 0,0);
-            pan = new TranslateTransform(0, plot.Height);
-            updateTransform(this.pan,false);
+            if (useSlider)
+            {
+                double percentage = horizontalZoomslider.Value / 100;
+                xscale = plot.Width / view.XMAX / percentage;
+            }
+            if (scale.ScaleX != xscale && scale.ScaleY != yscale)
+            {
+                
+            }
+                scale = new ScaleTransform(xscale, -yscale, 0, 0);
+                pan = new TranslateTransform(0, plot.Height);
+                updateTransform(this.pan, true);
         }
 
         //Export sensor data to a .csv file
@@ -302,26 +338,6 @@ namespace ArduinoMonitor
             
         }
 
-        //Panning options
-        private void panPreview(object sender, MouseEventArgs e)
-        {
-            Viewbox viewbox = (Viewbox)sender;
-            if (e.RightButton == MouseButtonState.Pressed)
-            { //Means user is panning the canvas, provide updated view
-                Point newpoint = e.GetPosition(viewbox);
-                //calculate movement
-                double dx = newpoint.X - dragPoint.X;
-                //double dy = newpoint.Y - dragPoint.Y;
-                double dy = 0;
-                TranslateTransform oldpan = this.pan;
-                TranslateTransform newpan = new TranslateTransform();
-                newpan.X = oldpan.X + (dx) * (1 / scale.ScaleX);
-                newpan.Y = oldpan.Y + (dy) * (1 / scale.ScaleY);              
-
-                updateTransform(newpan);
-            }
-        }
-
         //Open up a screen with extra help
         private void moreHelp(object sender, RoutedEventArgs e)
         {
@@ -346,7 +362,6 @@ namespace ArduinoMonitor
                     if (value < 500) { throw new System.FormatException("Can't be lower then 500"); }
                     control.Text = "500";
                     view.XMAX = value;
-                    signals.updatePlot();
 
              }
             catch (System.FormatException excep)
@@ -387,6 +402,7 @@ namespace ArduinoMonitor
             {
                 double xscale = plot.Width / view.XMAX / percentage;
                 this.scale.ScaleX = xscale;
+                //updateTransform(this.pan, true);
             }
             catch (Exception) { }
         }

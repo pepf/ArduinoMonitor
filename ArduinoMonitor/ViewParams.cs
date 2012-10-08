@@ -13,7 +13,7 @@ namespace ArduinoMonitor
             MIN = 0;
             MAX = 1024;
             XMIN = 0;
-            XMAX = 2000;
+            XMAX = 600;
             YMIN = 0;
             YMAX = 1024;
             FACTOR = 1;

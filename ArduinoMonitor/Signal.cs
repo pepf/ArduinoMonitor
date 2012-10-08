@@ -11,7 +11,7 @@ namespace ArduinoMonitor
 {
     class Signal
     {
-        public List<int> values;
+        public List<double> values;
         private StreamGeometry geometry;
         private MainWindow window;
         private Path line;
@@ -23,7 +23,7 @@ namespace ArduinoMonitor
         public Signal(MainWindow main, bool fake=false)
         {
             this.view = main.view; //Refer to the view parameters
-            values = new List<int>(0);
+            values = new List<double>(0);
             window = main;
             line = new Path(); //Path, to be filled with streamgeometry
             line.Stroke = Brushes.Red;
@@ -58,17 +58,21 @@ namespace ArduinoMonitor
         }
 
         //Add value to the signal and redraw
-        public void addValue(int inputValue) //Probably ranges from 0-1024
+        public void addValue(double inputValue) //Probably ranges from 0-1024
         {
             values.Add(inputValue);
             if (values.Count() > view.XMAX) {
                 view.XMAX = values.Count();
+                TranslateTransform oldpan = window.pan;
+                TranslateTransform pan = new TranslateTransform();
+                pan.X = oldpan.X -1;
+                pan.Y = oldpan.Y;
             }
-            createGeometry();
+            //createGeometry();
         }
 
         //Redraw the streamgeometry
-        private void createGeometry() {
+        public void createGeometry() {
             // Create a StreamGeometry to use to specify myPath.
             geometry = new StreamGeometry();
             // Open a StreamGeometryContext that can be used to describe this StreamGeometry  
@@ -81,7 +85,7 @@ namespace ArduinoMonitor
                 geo.BeginFigure(new Point(0, 0), false, false);
                 for (int i = 0; i < xmax; i+=xres)
                 {
-                    int value;
+                    double value;
                     if (i < (values.Count() - 1))
                     {
                         value = values[i];
@@ -107,12 +111,12 @@ namespace ArduinoMonitor
         }
 
         //Return latest signal
-        public int latest()
+        public double latest()
         {
             if (values.Count > 0) { return values[values.Count - 1]; } else { return 0; }
         }
         //Return second to latest signal
-        public int previous()
+        public double previous()
         {
             if (values.Count > 1) { return values[values.Count - 2]; } else { return 0; }
         }
@@ -154,7 +158,7 @@ namespace ArduinoMonitor
         }
 
         //Get value at particular x coordinate
-        public int getValue(int x, bool mapped=false) {
+        public double getValue(int x, bool mapped=false) {
             if (x < values.Count && x>=0)
             {
                 return values[x];

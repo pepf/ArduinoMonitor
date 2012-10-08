@@ -17,6 +17,8 @@ namespace ArduinoMonitor
     {
         public List<Signal> signals;
         private delegate void MethodDelegate();
+        private delegate void drawWorkerDelegate();
+        private delegate void updatePlotDelegate();
         private MethodDelegate ReadSerialData;
         public SerialPort arduinoPort;
         //private int timeIndex = 0;
@@ -63,6 +65,9 @@ namespace ArduinoMonitor
             plotlineV = createVLine(0,false);
             plotlineV.hideLabel();
             preparePlot();
+
+            drawWorkerDelegate w = drawWorker;
+            w.BeginInvoke(null, null);
 
             //addSignal(true);
         }
@@ -132,7 +137,7 @@ namespace ArduinoMonitor
         // Detect if new data is received.
         private void arduinoPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            dataDispatcher.Invoke(DispatcherPriority.Send, ReadSerialData);
+            dataDispatcher.Invoke(DispatcherPriority.Normal, ReadSerialData);
         }
         // Process received data.
         // Via delegate ReadSerialData.
@@ -163,7 +168,7 @@ namespace ArduinoMonitor
                         return;
                     }
                     Console.WriteLine(line);
-                    MatchCollection matches = Regex.Matches(line, "[0-9]+");
+                    MatchCollection matches = Regex.Matches(line, "[\\-0-9\\.]+");
                     if (matches.Count > 0)
                     {
                         while (signals.Count < matches.Count) //Mismatch between input data and data streams, add Signal
@@ -175,16 +180,13 @@ namespace ArduinoMonitor
                             for (int i = 0; i < signals.Count; i++)
                             {
                                 Signal signal = signals[i];
-                                int inputValue = int.Parse(matches[i].Value);
+                                double inputValue = double.Parse(matches[i].Value, System.Globalization.CultureInfo.InvariantCulture); //Apparantly extremely important in parsing the dot right
                                 if (inputValue > view.YMAX) view.YMAX = inputValue;
                                 else if (inputValue < view.YMIN) view.YMIN = inputValue;
-                                updatePlot();
-                                Console.WriteLine("added value " + matches[i] + " to signal " + i);
+                                //Console.WriteLine("added value " + matches[i] + " to signal " + i);
                                 signal.addValue(inputValue);
-
                             }
                         }
-                        //arduinoPort.DiscardInBuffer();
                     }
                 }
             }
@@ -215,6 +217,18 @@ namespace ArduinoMonitor
             for (int i = 0; i < view.YMAX; i += yRes) //horizontals lines
             {
                gridLine line = createHLine(i);
+            }
+        }
+
+        //Worker for delegate, will loop the updatePlot function FOREVER 
+        void drawWorker()
+        {
+            while (true)
+            {
+                //we use this.Invoke to send information back to our UI thread with a delegate
+                //if we were to try to access the text box on the UI thread directly from a different thread, there would be problems
+                window.Dispatcher.Invoke(new updatePlotDelegate(updatePlot));
+                Thread.Sleep(50); //FPS
             }
         }
 
@@ -252,6 +266,7 @@ namespace ArduinoMonitor
 
             //Verticalls
             nrlines = (int)Math.Ceiling((double)(view.XMAX - view.XMIN) / xRes);
+            nrlines = Math.Abs(nrlines);
             try
             {
                 int vertnr = verticals.Count;
@@ -285,8 +300,8 @@ namespace ArduinoMonitor
                 plotlineV.changeValue((int)mousePosition.X, (int) mousePosition.X);
                 //Light part of the graph
                 foreach (Signal signal in signals) {
-                    int result = signal.getValue((int)mousePosition.X, true);
-                    signal.movePointer((int)mousePosition.X,result);
+                    double result = signal.getValue((int)mousePosition.X, true);
+                    signal.movePointer((int)mousePosition.X,(int) Math.Floor((decimal) result));
                     signal.check.Content = signal.name + ": " + signal.getValue((int)mousePosition.X).ToString();
                 }
                 plotlineH.setThickness(factor);
@@ -297,6 +312,13 @@ namespace ArduinoMonitor
                 plotlineH.changeValue(0,0);
                 plotlineV.changeValue(0,0);
             }
+            foreach (Signal signal in signals) //Draw the real signals
+            {
+                signal.createGeometry();
+            }
+
+            //Fit plot in in canvas, using slider's values
+            window.resetTransform(true);
         }
 
         //Create horizontal gridlines with labels
@@ -323,7 +345,6 @@ namespace ArduinoMonitor
             foreach(Signal signal in signals) {
                 signal.setThickness(thickness);
             }
-            updatePlot();
         }
         public void updateLabels()
         {
