@@ -61,13 +61,6 @@ namespace ArduinoMonitor
         public void addValue(double inputValue) //Probably ranges from 0-1024
         {
             values.Add(inputValue);
-            if (values.Count() > view.XMAX) {
-                view.XMAX = values.Count();
-                TranslateTransform oldpan = window.pan;
-                TranslateTransform pan = new TranslateTransform();
-                pan.X = oldpan.X -1;
-                pan.Y = oldpan.Y;
-            }
             //createGeometry();
         }
 
@@ -79,11 +72,12 @@ namespace ArduinoMonitor
             // object's contents. 
             using (StreamGeometryContext geo = geometry.Open())
             {
-                double xmax = window.plot.Width/window.scale.ScaleX; //views xmax
-                int xres = (int)Math.Ceiling(xmax / window.plot.Width);
-                double xScale = window.scale.ScaleX;
+                double xmax = window.anchorOut; //views xmax
+                double xmin = window.anchorIn; //views xmin
+                int xres = (int)Math.Ceiling((xmax-xmin) / window.plot.Width);
+
                 geo.BeginFigure(new Point(0, 0), false, false);
-                for (int i = 0; i < xmax; i+=xres)
+                for (int i = (int)xmin; i < xmax; i+=1) //always 600 steps
                 {
                     double value;
                     if (i < (values.Count() - 1))

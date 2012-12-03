@@ -78,5 +78,12 @@ namespace ArduinoMonitor {
                 return ResourceManager.GetString("moreHelp", resourceCulture);
             }
         }
+        
+        public static byte[] openhand {
+            get {
+                object obj = ResourceManager.GetObject("openhand", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
     }
 }

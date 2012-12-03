@@ -11,10 +11,15 @@ using System.Windows.Controls;
 using System.Windows;
 using System.Threading;
 
+
+
 namespace ArduinoMonitor
 {
     class SignalCollection
     {
+        public const double FPS = 30;
+        public const int FPSmillis = (int) (1000 / FPS);
+
         public List<Signal> signals;
         private delegate void MethodDelegate();
         private delegate void drawWorkerDelegate();
@@ -186,6 +191,7 @@ namespace ArduinoMonitor
                                 //Console.WriteLine("added value " + matches[i] + " to signal " + i);
                                 signal.addValue(inputValue);
                             }
+                            if (signals[0].values.Count > view.XMAX) { view.XMAX = signals[0].values.Count; }
                         }
                     }
                 }
@@ -227,8 +233,8 @@ namespace ArduinoMonitor
             {
                 //we use this.Invoke to send information back to our UI thread with a delegate
                 //if we were to try to access the text box on the UI thread directly from a different thread, there would be problems
-                window.Dispatcher.Invoke(new updatePlotDelegate(updatePlot));
-                Thread.Sleep(50); //FPS
+                window.Dispatcher.Invoke(DispatcherPriority.Render,new updatePlotDelegate(updatePlot));
+                Thread.Sleep(new System.TimeSpan(0,0,0,0,FPSmillis)); //FPS
             }
         }
 
@@ -296,8 +302,12 @@ namespace ArduinoMonitor
             //PlotLines based on mouse position
             if (drawmouse == true)
             {
-                plotlineH.changeValue((int)mousePosition.Y, (int) mousePosition.Y);
-                plotlineV.changeValue((int)mousePosition.X, (int) mousePosition.X);
+                try
+                {
+                    plotlineH.changeValue((int)mousePosition.Y, (int)mousePosition.Y);
+                    plotlineV.changeValue((int)mousePosition.X, (int)mousePosition.X);
+                }
+                catch (Exception) { }
                 //Light part of the graph
                 foreach (Signal signal in signals) {
                     double result = signal.getValue((int)mousePosition.X, true);

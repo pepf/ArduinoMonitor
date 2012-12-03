@@ -130,4 +130,7 @@ If you want to add more signals, you can seperate them with commas. Remember, th
 Have fun!</value>
     <comment>Text that is displayed in the more help box</comment>
   </data>
+  <data name="openhand" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>resources\openhand.cur;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
 </root>

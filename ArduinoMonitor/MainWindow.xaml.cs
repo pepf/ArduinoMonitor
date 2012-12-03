@@ -28,11 +28,16 @@ namespace ArduinoMonitor
         public SerialPort arduinoPort;
         public Regex serialpattern;
         private SignalCollection signals;
-        private Point dragPoint;
+        private Point outdragPoint;
+        private Point indragPoint;
+        private Point bardragPoint;
+        private int barPos, inPos, outPos; //store old position of the scrollbar, in and outpoint
+        private Rectangle dragged;
         public TranslateTransform pan;
         public ScaleTransform scale;
         public ViewParams view;
         public bool isConnected = false;
+        public double anchorIn, anchorOut = 0;
         
         private string[] ports;
 
@@ -47,7 +52,6 @@ namespace ArduinoMonitor
                 signals.updateLabels();
             resetTransform();
             ports = SerialPort.GetPortNames();
-            this.MouseLeftButtonDown += new MouseButtonEventHandler(dragWindow);
             
             Console.WriteLine("ports:");
             foreach(string port in ports){
@@ -75,7 +79,11 @@ namespace ArduinoMonitor
 
         void dragWindow(object sender, MouseButtonEventArgs e)
         {
+            //Change cursor
+            Cursor closedhand = new Cursor(new System.IO.MemoryStream(ArduinoMonitor.Resources.closedhand));
+            dragBar.Cursor = closedhand;
             this.DragMove();
+
         }
 
         //Connecting arduino
@@ -184,134 +192,45 @@ namespace ArduinoMonitor
             catch (NullReferenceException) { }
 
         }
-
-        //Zoom in and zoom out
-        private void scrollViewbox(object sender, MouseWheelEventArgs e)
-        {
-            return;
-            ScaleTransform scale = new ScaleTransform();
-            ScaleTransform oldscale = this.scale;
-            
-            double delta = (double)e.Delta / 1000;
-            Point cursor = e.GetPosition(bgplot);
-            Console.WriteLine(cursor.ToString());
-            Matrix m = this.scale.Value;
-            //Event that scrolls the viewbox, to zoom in on the graph
-            double zF = 1 + delta;
-            if (e.Delta > 0)
-            {
-                Console.WriteLine("Zooming the viewbox in with " + e.Delta.ToString());
-                m.ScaleAtPrepend(zF, zF, cursor.X, cursor.Y);
-            }
-            else
-            {
-                Console.WriteLine("Zooming the viewbox out with " + e.Delta.ToString());
-                m.ScaleAtPrepend(zF, zF, cursor.X, cursor.Y);
-            }
-
-            scale.ScaleX = m.M11;
-            scale.ScaleY = m.M22;
-            this.pan.X += m.OffsetX;
-            this.pan.Y += m.OffsetY;
-            this.scale = scale; //write back to class property
-            updateTransform(this.pan);
-        }
-
-        //Drag event
-        private void drag(object sender, MouseButtonEventArgs e)
-        {
-            return;
-            Viewbox viewbox = (Viewbox) sender;
-            dragPoint = e.GetPosition(viewbox);
-            //Change cursor
-            Cursor closedhand = new Cursor(new System.IO.MemoryStream(ArduinoMonitor.Resources.closedhand));
-            plot.Cursor = closedhand;
-        }
-
-        //Stop dragging; Calculate the amount of drag etc.
-        private void dragstop(object sender, MouseButtonEventArgs e)
-        {
-            return;
-            Viewbox viewbox = (Viewbox)sender;
-            Point newpoint = e.GetPosition(viewbox);
-            //calculate movement
-            double dx = newpoint.X - dragPoint.X;
-            double dy = 0;
-           // double dy = newpoint.Y - dragPoint.Y;
-            Console.WriteLine("stop drag, moved X:" + dx.ToString() + " - Y:" + dy.ToString());
-            TranslateTransform oldpan = this.pan;
-            TranslateTransform pan = new TranslateTransform();
-            pan.X = oldpan.X +(dx) *(1/scale.ScaleX);
-            pan.Y = oldpan.Y + (dy) * (1 / scale.ScaleY);
-            this.pan = pan; //Write back to class property
-            updateTransform(this.pan);
-            plot.Cursor = Cursors.Cross;
-        }
-
-        //Panning options
-        private void panPreview(object sender, MouseEventArgs e)
-        {
-            return;
-            Viewbox viewbox = (Viewbox)sender;
-            if (e.RightButton == MouseButtonState.Pressed)
-            { //Means user is panning the canvas, provide updated view
-                Point newpoint = e.GetPosition(viewbox);
-                //calculate movement
-                double dx = newpoint.X - dragPoint.X;
-                //double dy = newpoint.Y - dragPoint.Y;
-                double dy = 0;
-                TranslateTransform oldpan = this.pan;
-                TranslateTransform newpan = new TranslateTransform();
-                newpan.X = oldpan.X + (dx) * (1 / scale.ScaleX);
-                newpan.Y = oldpan.Y + (dy) * (1 / scale.ScaleY);
-
-                updateTransform(newpan);
-            }
-        }
-
-
-        //Update rendertransform property
-        public void updateTransform(TranslateTransform pan,bool scaleStrokes = true)
-        {
-            TransformGroup transform = new TransformGroup();
-            transform.Children.Add(pan);
-            transform.Children.Add(scale);
-            plot.RenderTransform = transform;
-            //view.XMIN = -1*pan.X;
-            //panview.XMAX = view.XMIN + plot.Width/scale.ScaleX;
-            //labels.RenderTransform = transform;
-            if (scaleStrokes)
-            {
-                signals.scaleSignalStrokes(scale);
-                signals.updateLabels();
-            }
-        }
-
+   
         //Reset view to basic view
         private void resetView(object sender, RoutedEventArgs e)
         {
             resetTransform();
-            horizontalZoomslider.Value = 100;
         }
         
         //Reset graph transform
         public void resetTransform(Boolean useSlider = false)
         {
+            Rect rectangleBounds = new Rect();
+            rectangleBounds = plot.RenderTransform.TransformBounds(new Rect(0, 0, plot.Width, plot.Height));
+
+
             //Add transformgroup to plot
-            double yscale = plot.Height / view.YMAX;
-            double xscale = plot.Width / view.XMAX;
+            double yscale = plot.Height / view.YMAX; //YMAX is maximum plot value received
+            double xscale = plot.Width / view.XMAX; //XMAX is total ammount of plotted points
+            Matrix m = new Matrix(1, 0, 0, 1, 0, 0);
             if (useSlider)
             {
-                double percentage = horizontalZoomslider.Value / 100;
-                xscale = plot.Width / view.XMAX / percentage;
+                double maxVal = zoomBar.ActualWidth - outPoint.Width;
+                double outP = Canvas.GetLeft(outPoint); //points position relative to the scrollbar
+                double inP = Canvas.GetLeft(inPoint);
+                double delta = (outP-inP);
+                double factor = (maxVal/delta) * xscale;
+                double mappedinP = (inP / maxVal) * view.XMAX;
+
+                anchorOut = (outP / maxVal) * view.XMAX;
+                anchorIn = (inP / maxVal) * view.XMAX;
+                double center = (anchorOut +anchorIn)/2;
+
+                m.Translate(-anchorIn, 0); //Move graph to inpoint
+                m.ScaleAt(factor, -yscale,0,0); //scale around the inpoint, with a factor so that outpoint is 600px further away
+                m.Translate(0, plot.Height); //to compensate the flipped graph, move it back down
             }
-            if (scale.ScaleX != xscale && scale.ScaleY != yscale)
-            {
-                
-            }
-                scale = new ScaleTransform(xscale, -yscale, 0, 0);
-                pan = new TranslateTransform(0, plot.Height);
-                updateTransform(this.pan, true);
+                scale = new ScaleTransform(m.M11, m.M22, 0, 0); //save scale factors in a scaletransform for reference
+                signals.scaleSignalStrokes(scale); //Scale the plotlines to compensate for canvas scaling
+                MatrixTransform matrixTrans = new MatrixTransform(m); //Create matrixtransform
+                plot.RenderTransform = matrixTrans; //Apply to canvas
         }
 
         //Export sensor data to a .csv file
@@ -351,42 +270,13 @@ namespace ArduinoMonitor
             dlg.Show();
         }
 
-        //Change xmax
-        private void xmaxChange(object sender, TextChangedEventArgs e)
-        {
-            TextBox control = (TextBox)sender;
-            control.Foreground = Brushes.Black;
-            try
-            {
-                    int value = int.Parse(control.Text);
-                    if (value < 500) { throw new System.FormatException("Can't be lower then 500"); }
-                    control.Text = "500";
-                    view.XMAX = value;
-
-             }
-            catch (System.FormatException excep)
-            {
-                control.Foreground = Brushes.Red;
-                Console.WriteLine(excep.Message);
-            }
-            catch (NullReferenceException) { }
-            
-            //Adjust view
-            try
-            {
-                double xscale = plot.Width / view.XMAX;
-                scale = new ScaleTransform(xscale, this.scale.ScaleY, 0, 0);
-                updateTransform(this.pan, false);
-            }
-            catch (NullReferenceException) { }
-        }
-
-
+        //Close the window
         private void closeWindow(object sender, RoutedEventArgs e)
         {
             mainWindow.Close();
         }
 
+        //Minimize Window
         private void minWindow(object sender, RoutedEventArgs e)
         {
             mainWindow.WindowState = System.Windows.WindowState.Minimized;
@@ -414,6 +304,127 @@ namespace ArduinoMonitor
             {
                 signal.clear();
             }
+        }
+
+        //MouseDown Drag in- or outPoint 
+        private void dragZoom_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            
+            Rectangle point = (Rectangle)sender;
+            Mouse.Capture(point, CaptureMode.Element);
+            dragged = point;
+            point.Fill = Brushes.DimGray;
+            if (point.Name == "inPoint") { indragPoint = e.GetPosition(zoomBar); }
+            else if (point.Name == "zoomBar_Bar") { //Code to deal with draggin the bar itself
+                bardragPoint = e.GetPosition(zoomBar);
+                barPos = (int) Canvas.GetLeft(zoomBar_Bar);
+                inPos = (int)Canvas.GetLeft(inPoint);
+                outPos = (int)Canvas.GetLeft(outPoint);
+            }
+            else { outdragPoint = e.GetPosition(zoomBar); }
+            //Change cursor
+            Cursor closedhand = new Cursor(new System.IO.MemoryStream(ArduinoMonitor.Resources.closedhand));
+            point.Cursor = closedhand;
+
+
+        }
+
+        //MouseUp Drag in- or outPoint
+        private void dragZoom_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            Rectangle point = (Rectangle)sender;
+            point.Fill = Brushes.WhiteSmoke;
+            dragged = null;
+            Mouse.Capture(null);
+        }
+
+        private void dragZoom_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed && dragged != null)
+            {
+                Rectangle point = (Rectangle)sender;
+                Point newPoint = e.GetPosition(zoomBar);
+                if (newPoint.X < 10) { newPoint.X = 10; }
+                if (newPoint.X > zoomBar.ActualWidth -10) { newPoint.X = zoomBar.ActualWidth-10; }
+                if (dragged.Name == "inPoint") {
+                    if (newPoint.X < Canvas.GetLeft(outPoint) - point.Width/2)
+                    {
+                        Canvas.SetLeft(dragged, newPoint.X - 10);
+
+                        
+                    }
+                }
+                else if (dragged.Name == "zoomBar_Bar")
+                {
+                    double deltaX = newPoint.X - bardragPoint.X;
+                    double barLeft = barPos + deltaX;
+                    double inLeft = inPos + deltaX;
+                    double outLeft = outPos + deltaX;
+                    if (barLeft < 0) { barLeft = 0; inLeft = 0; outLeft = dragged.Width; }
+                    if (barLeft + dragged.Width > zoomBar.ActualWidth) { barLeft = zoomBar.ActualWidth - dragged.Width; inLeft = zoomBar.ActualWidth - dragged.Width; outLeft = zoomBar.ActualWidth - 20; }
+                    Canvas.SetLeft(dragged, barLeft);
+                    Canvas.SetLeft(inPoint, inLeft);
+                    Canvas.SetLeft(outPoint, outLeft);
+
+                }
+                else
+                { //outpoint
+                    if (newPoint.X > Canvas.GetLeft(inPoint) + point.Width)
+                    {
+                        Canvas.SetLeft(dragged, newPoint.X - 10);
+                    }
+                }
+
+                if (dragged.Name == "inPoint" || dragged.Name == "outPoint")
+                { //if draggin in and outpoints, update bar along
+                    Canvas.SetLeft(zoomBar_Bar, Canvas.GetLeft(inPoint));
+                    zoomBar_Bar.Width = Canvas.GetLeft(outPoint) - Canvas.GetLeft(inPoint);
+                }
+            }
+            
+        }
+        private void dragZoom_MouseEnter(object sender, MouseEventArgs e)
+        {
+            Rectangle point = (Rectangle)sender;
+            point.Fill = Brushes.Gray;
+            //Change cursor
+            Cursor closedhand = new Cursor(new System.IO.MemoryStream(ArduinoMonitor.Resources.openhand));
+            point.Cursor = closedhand;
+        }
+
+        private void dragZoom_MouseLeave(object sender, MouseEventArgs e)
+        {
+            Rectangle point = (Rectangle)sender;
+            if (point.Name == "zoomBar_Bar") { point.Fill = Brushes.CadetBlue; }
+            else
+            {
+                point.Fill = Brushes.WhiteSmoke;
+            }
+            dragged = null;
+            Mouse.Capture(null);
+        }
+
+        private void dragBar_MouseEnter(object sender, MouseEventArgs e)
+        {
+            Cursor openhand = new Cursor(new System.IO.MemoryStream(ArduinoMonitor.Resources.openhand));
+            dragBar.Cursor = openhand;
+        }
+
+        private void zoomBar_Bar_MouseUp(object sender, MouseButtonEventArgs e)
+        { //End
+            Rectangle point = (Rectangle)sender;
+            point.Fill = Brushes.CadetBlue;
+            dragged = null;
+            Mouse.Capture(null);
+            Cursor open = new Cursor(new System.IO.MemoryStream(ArduinoMonitor.Resources.openhand));
+            point.Cursor = open;
+        }
+
+        private void zoomBar_Bar_Initialized(object sender, EventArgs e)
+        { //Make rectangle stretch between in and out points
+            Rectangle bar = (Rectangle)sender;
+            Canvas.SetLeft(bar,inPoint.Width);
+            bar.Width = Canvas.GetLeft(outPoint) - Canvas.GetLeft(inPoint) - inPoint.Width;
         }
 
 

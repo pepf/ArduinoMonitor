@@ -3,11 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="ArduinoMonitor" Height="630" Width="800" Name="mainWindow" AllowsTransparency="False" Foreground="White" UseLayoutRounding="False" VisualClearTypeHint="Enabled" VisualTextRenderingMode="ClearType" WindowStyle="None" Background="{x:Null}" WindowStartupLocation="CenterScreen" MinWidth="640" MinHeight="480" Icon="multiresicon.ico" ResizeMode="NoResize" BorderBrush="DimGray">
     <Grid Name="contentGrid">
-        <Border BorderBrush="DimGray" BorderThickness="2" Height="Auto" HorizontalAlignment="Stretch" Margin="0" Name="windowBorder" VerticalAlignment="Stretch" Width="Auto">
-        <Slider Height="23" Name="horizontalZoomslider" Width="Auto" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10,0,10,100" ToolTip="Zoom percentage" Maximum="100" Value="100" SmallChange="1" TickFrequency="2" TickPlacement="BottomRight" IsSelectionRangeEnabled="False" SelectionEnd="100" SelectionStart="50" ValueChanged="vertZoomslider_ValueChanged" Minimum="1" />
-        </Border>
-        <Button Content="X" Height="20" HorizontalAlignment="Right" Margin="0,5,12,0" Name="windowClose" VerticalAlignment="Top" Width="20" FontWeight="Bold" Background="{x:Null}" Click="closeWindow" />
-        <Button Content="-" Height="20" HorizontalAlignment="Right" Margin="0,5,40,0" Name="windowMin" VerticalAlignment="Top" Width="20" FontWeight="Bold" Background="{x:Null}" Click="minWindow" />
+        <Border BorderBrush="DimGray" BorderThickness="2" Height="Auto" HorizontalAlignment="Stretch" Margin="0" Name="windowBorder" VerticalAlignment="Stretch" Width="Auto"/>
+        <Button Content="X" Height="20" HorizontalAlignment="Right" Margin="0,5,12,0" Name="windowClose" VerticalAlignment="Top" Width="20" FontWeight="Bold" Background="WhiteSmoke" Click="closeWindow" />
+        <Button Content="-" Height="20" HorizontalAlignment="Right" Margin="0,5,40,0" Name="windowMin" VerticalAlignment="Top" Width="20" FontWeight="Bold" Background="WhiteSmoke" Click="minWindow" />
+        <Rectangle Margin="0,0,0,0" Height="15" HorizontalAlignment="Stretch" VerticalAlignment="Top" IsManipulationEnabled="True" Fill="#84D4D4D4" Name="dragBar" MouseLeftButtonDown="dragWindow" StrokeThickness="0" Panel.ZIndex="-10" MouseEnter="dragBar_MouseEnter"></Rectangle>
         <Grid Height="73" VerticalAlignment="Top" Margin="0,20,0,0" IsHitTestVisible="True">
             <Button Content="Connect" Height="40" HorizontalAlignment="Right" Margin="0,12,12,0" Name="connectButton" VerticalAlignment="Top" Width="100" Padding="5" BorderThickness="0" BorderBrush="#00000000" FontStyle="Normal" FontWeight="Normal" FontSize="16" Click="arduinoConnect" Foreground="#FF212121">
             <Button.Background>
@@ -29,12 +28,17 @@
         </Button>
             <Button Height="23" HorizontalAlignment="Right" Margin="0,7,250,0" Name="helpBtn" VerticalAlignment="Top" Width="30" BorderBrush="{x:Null}" OpacityMask="{x:Null}" Foreground="#FF383838" Click="moreHelp" Background="{x:Null}" ToolTip="More Help" FontSize="12" FontWeight="Bold" Content="?" />
         </Grid>
-        <Viewbox Name="canvasviewbox" Stretch="Fill" ClipToBounds="True" Margin="10,90,10,130" MouseWheel="scrollViewbox" MouseRightButtonDown="drag" MouseRightButtonUp="dragstop" MouseMove="panPreview">
-            <Canvas  Name="bgplot"  Height="300"  Width="600" HorizontalAlignment="Left" VerticalAlignment="Top" Background="#FF4E4E4E" MouseMove="specific"   Cursor="Cross" MouseLeave="disableDraw" >
-                <Canvas Name="plot" Height="300"  Width="600" HorizontalAlignment="Left" VerticalAlignment="Top"  RenderTransformOrigin="0,1">
+        <Viewbox Name="canvasviewbox" Stretch="Fill" ClipToBounds="True" Margin="10,90,10,130">
+            <Canvas  Name="bgplot"  Height="300"  Width="600" HorizontalAlignment="Left" VerticalAlignment="Top" Background="#FF4E4E4E" MouseMove="specific"   Cursor="Cross" MouseLeave="disableDraw" ClipToBounds="True">
+                <Canvas Name="plot" Height="300"  Width="600" HorizontalAlignment="Center" VerticalAlignment="Center">
                 </Canvas>
             </Canvas>
         </Viewbox>
+        <Canvas Height="20" Width="Auto" Margin="10,0,10,105" VerticalAlignment="Bottom" Background="#FF4E4E4E" Name="zoomBar"  >
+            <Rectangle Fill="WhiteSmoke" Width="20" Height="20" VerticalAlignment="Stretch" Canvas.Left="0" Name="inPoint" MouseDown="dragZoom_MouseDown" MouseMove="dragZoom_MouseMove" MouseUp="dragZoom_MouseUp" MouseEnter="dragZoom_MouseEnter" MouseLeave="dragZoom_MouseLeave" />
+            <Rectangle Fill="WhiteSmoke" Width="20" Height="20" VerticalAlignment="Stretch" Canvas.Left="738" Name="outPoint" MouseDown="dragZoom_MouseDown" MouseMove="dragZoom_MouseMove" MouseUp="dragZoom_MouseUp" MouseEnter="dragZoom_MouseEnter" MouseLeave="dragZoom_MouseLeave"/>
+            <Rectangle Fill="CadetBlue" Width="106" Height="20" VerticalAlignment="Top" HorizontalAlignment="Stretch" Name="zoomBar_Bar" MouseEnter="dragZoom_MouseEnter" MouseLeave="dragZoom_MouseLeave" MouseUp="zoomBar_Bar_MouseUp" MouseDown="dragZoom_MouseDown" Initialized="zoomBar_Bar_Initialized" Canvas.Left="14" Canvas.Right="100" Panel.ZIndex="-1" MouseMove="dragZoom_MouseMove" ClipToBounds="True" />
+        </Canvas>
         <StackPanel Height="88" HorizontalAlignment="Left" Margin="12,0,0,10" Name="signalToggles" VerticalAlignment="Bottom" Width="343"></StackPanel>
         <Grid Name="Viewcontrols" Margin="0,0,10,10" ShowGridLines="False" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="350" Height="88">
             <Grid.ColumnDefinitions>
