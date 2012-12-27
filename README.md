@@ -30,3 +30,4 @@
 # Download
 
 Want to give it a try? Full download is available on the [downloads](https://github.com/pepf/ArduinoMonitor/downloads) page.
+Since downloads from Github will be deprecated soon, you can also [download the newest version from Dropbox](http://db.tt/irEwRhSZ)
